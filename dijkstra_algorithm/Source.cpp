@@ -6,6 +6,29 @@
 #include <set>
 #include <ctime>
 
+class Heap
+{
+	int Dist;
+	int City;
+public:
+	Heap(int _Dist, int _y)
+	{
+		Dist = _Dist;
+		City = _y;
+	}
+	int getDist() const { return Dist; }
+	int getCity() const { return City; }
+};
+
+class myComparator
+{
+public:
+	int operator() (const Heap& p1, const Heap& p2)
+	{
+		return p1.getDist() > p2.getDist();
+	}
+};
+
 struct Graph {
 public:
 	int numberOfCities;
@@ -65,12 +88,12 @@ Graph ReadFile(std::string fileName, Graph inputGraph) {
 
 Distances DijkstraForward(Graph inputGraph) {
 	
+	std::vector<Heap> BinaryHeap;
+
 	Distances Result;
 	Result.distances.resize(inputGraph.numberOfCities);
 	Result.previous.resize(inputGraph.numberOfCities);
 	std::vector<int> visite(inputGraph.numberOfCities);
-	
-
 
 	for (int i = 0; i < inputGraph.numberOfCities; i++) {
 		Result.distances[i] = INT_MAX;
@@ -80,23 +103,26 @@ Distances DijkstraForward(Graph inputGraph) {
 	Result.distances[inputGraph.startPoint] = 0;
 	visite[inputGraph.startPoint] = true;
 
-	std::set<std::pair<int, int> > q;
-	for (int i = 0; i < inputGraph.numberOfCities; ++i)
-	{
-		q.insert(std::make_pair(Result.distances[i], i));
-	}
+	BinaryHeap.push_back(Heap(0, inputGraph.startPoint));
+
+	std::make_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
 
 	std::cout << "Start" << std::endl;
 	unsigned int start_time = clock();
-	while (!q.empty()) {
-		std::pair<int, int> cur = *q.begin();
-		q.erase(q.begin());
+	while (!BinaryHeap.empty() ) {
+
+		std::pop_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
+		Heap temp = BinaryHeap.back();
+		BinaryHeap.pop_back();
+
+		std::pair<int, int> cur;
+		cur.first = temp.getDist();
+		cur.second = temp.getCity();
 
 		for (int i = 0; i < (int)inputGraph.edges[cur.second].size(); ++i) {
 
 			if (!visite[i] && inputGraph.edges[cur.second][i] != INT_MAX && inputGraph.edges[cur.second][i] + Result.distances[cur.second] < Result.distances[i]) {
 
-				q.erase(std::make_pair(Result.distances[i], i));
 
 				int temp = Result.distances[i];
 				if (inputGraph.edges[cur.second][i] != INT_MAX) {
@@ -104,7 +130,8 @@ Distances DijkstraForward(Graph inputGraph) {
 					Result.previous[i] = cur.second;
 				}				
 				if (temp > Result.distances[i]) {
-					q.insert(std::make_pair(Result.distances[i], i));
+					BinaryHeap.emplace_back(Heap(Result.distances[i], i));
+					std::push_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
 				}
 			}
 		}
