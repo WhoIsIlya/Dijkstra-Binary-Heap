@@ -1,10 +1,17 @@
+/*
+Разработчики: студенты группы ПСм-11 Свинчуков И.  и  Стародубцева А.
+Среда выполнения: Visual Studio 2019
+Инструкция запуска:
+Чтобы собрать программу на Windows, нужно запустить Visual Studio, открыть директорию проекта и собрать проект,
+ используя возможности IDE.
+*/
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <vector>
 #include <queue>
 #include <set>
-#include <ctime>
 
 class Heap
 {
@@ -49,11 +56,19 @@ Distances DijkstraForward(Graph inputGraph);
 std::vector<int> DijkstraBackward(Graph inputGraph, Distances Result);
 
 int main() {
-	std::string fileName = "input5.txt";
+	std::string fileName = "input.txt";
 	Graph DijkstraGraph = ReadFile(fileName, DijkstraGraph);
 	Distances Result = DijkstraForward(DijkstraGraph);
-	std::cout << "Distance: " << Result.distances[DijkstraGraph.finishPoint] << std::endl;
+	std::cout << Result.distances[DijkstraGraph.finishPoint] << std::endl;
 	std::vector<int> shortestPath = DijkstraBackward(DijkstraGraph, Result);
+	std::ofstream out;
+	out.open("output.txt");
+	if (out.is_open()) {
+		out << Result.distances[DijkstraGraph.finishPoint] << std::endl;
+	}
+	for (int i = 0; i < shortestPath.size(); i++) {
+		out << shortestPath[i] + 1 << ' ';
+	}
 
 	return 0;
 }
@@ -107,8 +122,6 @@ Distances DijkstraForward(Graph inputGraph) {
 
 	std::make_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
 
-	std::cout << "Start" << std::endl;
-	unsigned int start_time = clock();
 	while (!BinaryHeap.empty() ) {
 
 		std::pop_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
@@ -123,7 +136,6 @@ Distances DijkstraForward(Graph inputGraph) {
 
 			if (!visite[i] && inputGraph.edges[cur.second][i] != INT_MAX && inputGraph.edges[cur.second][i] + Result.distances[cur.second] < Result.distances[i]) {
 
-
 				int temp = Result.distances[i];
 				if (inputGraph.edges[cur.second][i] != INT_MAX) {
 					Result.distances[i] = inputGraph.edges[cur.second][i] + Result.distances[cur.second];
@@ -136,9 +148,6 @@ Distances DijkstraForward(Graph inputGraph) {
 			}
 		}
 	}
-	unsigned int end_time = clock(); // конечное время
-	unsigned int search_time = end_time - start_time;
-	std::cout << "runtime = " << search_time / 1000.0 << std::endl;
 	return Result;
 }
 
@@ -150,9 +159,10 @@ std::vector<int> DijkstraBackward(Graph inputGraph, Distances Result) {
 	path.push_back(inputGraph.startPoint);
 
 	reverse(path.begin(), path.end());
-	std::cout << "Path: ";
-	for (int i = 0; i < path.size(); i++)
+
+	for (int i = 0; i < path.size(); i++) {
 		std::cout << path[i] + 1 << ' ';
+	}
 	std::cout << std::endl;
 	return path;
 }
