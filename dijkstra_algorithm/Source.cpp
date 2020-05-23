@@ -12,6 +12,7 @@
 #include <vector>
 #include <queue>
 #include <set>
+#include <ctime>
 
 class Heap
 {
@@ -43,6 +44,7 @@ public:
 	int startPoint;
 	int finishPoint;
 	std::vector<std::vector<int>>edges;
+	std::vector<std::vector< std::pair<int, int>>> inputData; //v
 };
 
 struct Distances
@@ -56,8 +58,10 @@ Distances DijkstraForward(Graph inputGraph);
 std::vector<int> DijkstraBackward(Graph inputGraph, Distances Result);
 
 int main() {
+	unsigned int start_time = clock();
 	std::string fileName = "input.txt";
-	Graph DijkstraGraph = ReadFile(fileName, DijkstraGraph);
+	Graph DijkstraGraph;
+	DijkstraGraph = ReadFile(fileName, DijkstraGraph);
 	Distances Result = DijkstraForward(DijkstraGraph);
 	std::cout << Result.distances[DijkstraGraph.finishPoint] << std::endl;
 	std::vector<int> shortestPath = DijkstraBackward(DijkstraGraph, Result);
@@ -69,7 +73,10 @@ int main() {
 	for (int i = 0; i < shortestPath.size(); i++) {
 		out << shortestPath[i] + 1 << ' ';
 	}
-
+	unsigned int end_time = clock();
+	unsigned int search_time = end_time - start_time;
+	std::cout << "runtime: " << search_time << std::endl;
+	std::getchar();
 	return 0;
 }
 
@@ -79,22 +86,23 @@ Graph ReadFile(std::string fileName, Graph inputGraph) {
 		std::cout << "Can't open file";
 	}
 	else {
+		
 		file >> inputGraph.numberOfCities >> inputGraph.numberOfRoads >> inputGraph.startPoint >> inputGraph.finishPoint;
 		inputGraph.startPoint--;
 		inputGraph.finishPoint--;
 
 		inputGraph.edges.resize(inputGraph.numberOfCities, std::vector<int>(inputGraph.numberOfCities, 0));
 
-		for (int i = 0; i < inputGraph.numberOfCities; i++) {
-			for (int j = 0; j < inputGraph.numberOfCities; j++) {
-				inputGraph.edges[i][j] = INT_MAX;
-			}
-		}
+		//std::vector<std::vector< std::pair<int, int>>> inputData(inputGraph.numberOfRoads * 2); //v
+		inputGraph.inputData.resize(inputGraph.numberOfCities); //v
 
 		for (int i = 0; i < inputGraph.numberOfRoads; i++) {
 			int edgeStartPoint, edgeEndPoint, edgeWeight;
 			file >> edgeStartPoint >> edgeEndPoint >> edgeWeight;
 			inputGraph.edges[edgeStartPoint - 1][edgeEndPoint - 1] = inputGraph.edges[edgeEndPoint - 1][edgeStartPoint - 1] = edgeWeight;
+
+			inputGraph.inputData[edgeStartPoint - 1].push_back(std::make_pair(edgeEndPoint - 1, edgeWeight)); //v
+			inputGraph.inputData[edgeEndPoint - 1].push_back(std::make_pair(edgeStartPoint - 1, edgeWeight)); //v
 		}
 		
 	}
@@ -108,15 +116,12 @@ Distances DijkstraForward(Graph inputGraph) {
 	Distances Result;
 	Result.distances.resize(inputGraph.numberOfCities);
 	Result.previous.resize(inputGraph.numberOfCities);
-	std::vector<int> visite(inputGraph.numberOfCities);
 
 	for (int i = 0; i < inputGraph.numberOfCities; i++) {
 		Result.distances[i] = INT_MAX;
-		visite[i] = false;
 	}
 
 	Result.distances[inputGraph.startPoint] = 0;
-	visite[inputGraph.startPoint] = true;
 
 	BinaryHeap.push_back(Heap(0, inputGraph.startPoint));
 
@@ -127,14 +132,22 @@ Distances DijkstraForward(Graph inputGraph) {
 		std::pop_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
 		Heap temp = BinaryHeap.back();
 		BinaryHeap.pop_back();
+		
 
 		std::pair<int, int> cur;
 		cur.first = temp.getDist();
 		cur.second = temp.getCity();
 
+		if (cur.first > Result.distances[cur.second]){
+			continue;
+		}
+
+		//std::cout << "1: " << inputGraph.edges[cur.second].size() << std::endl;
+		//std::cout << "2: " << inputGraph.inputData[cur.second].size() << std::endl;
+
 		for (int i = 0; i < (int)inputGraph.edges[cur.second].size(); ++i) {
 
-			if (!visite[i] && inputGraph.edges[cur.second][i] != INT_MAX && inputGraph.edges[cur.second][i] + Result.distances[cur.second] < Result.distances[i]) {
+			if (inputGraph.edges[cur.second][i] != 0 && inputGraph.edges[cur.second][i] + Result.distances[cur.second] < Result.distances[i]) {
 
 				int temp = Result.distances[i];
 				if (inputGraph.edges[cur.second][i] != INT_MAX) {
