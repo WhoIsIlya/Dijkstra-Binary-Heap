@@ -43,8 +43,7 @@ public:
 	int numberOfRoads;
 	int startPoint;
 	int finishPoint;
-	std::vector<std::vector<int>>edges;
-	std::vector<std::vector< std::pair<int, int>>> inputData; //v
+	std::vector<std::vector< std::pair<int, int>>> inputData;
 };
 
 struct Distances
@@ -74,8 +73,8 @@ int main() {
 		out << shortestPath[i] + 1 << ' ';
 	}
 	unsigned int end_time = clock();
-	unsigned int search_time = end_time - start_time;
-	std::cout << "runtime: " << search_time << std::endl;
+	double search_time = end_time - start_time;
+	std::cout << "runtime: " << search_time / 1000 << "s" << std::endl;
 	std::getchar();
 	return 0;
 }
@@ -91,18 +90,14 @@ Graph ReadFile(std::string fileName, Graph inputGraph) {
 		inputGraph.startPoint--;
 		inputGraph.finishPoint--;
 
-		inputGraph.edges.resize(inputGraph.numberOfCities, std::vector<int>(inputGraph.numberOfCities, 0));
-
-		//std::vector<std::vector< std::pair<int, int>>> inputData(inputGraph.numberOfRoads * 2); //v
-		inputGraph.inputData.resize(inputGraph.numberOfCities); //v
+		inputGraph.inputData.resize(inputGraph.numberOfCities);
 
 		for (int i = 0; i < inputGraph.numberOfRoads; i++) {
 			int edgeStartPoint, edgeEndPoint, edgeWeight;
 			file >> edgeStartPoint >> edgeEndPoint >> edgeWeight;
-			inputGraph.edges[edgeStartPoint - 1][edgeEndPoint - 1] = inputGraph.edges[edgeEndPoint - 1][edgeStartPoint - 1] = edgeWeight;
 
-			inputGraph.inputData[edgeStartPoint - 1].push_back(std::make_pair(edgeEndPoint - 1, edgeWeight)); //v
-			inputGraph.inputData[edgeEndPoint - 1].push_back(std::make_pair(edgeStartPoint - 1, edgeWeight)); //v
+			inputGraph.inputData[edgeStartPoint - 1].push_back(std::make_pair(edgeEndPoint - 1, edgeWeight));
+			inputGraph.inputData[edgeEndPoint - 1].push_back(std::make_pair(edgeStartPoint - 1, edgeWeight));
 		}
 		
 	}
@@ -142,20 +137,17 @@ Distances DijkstraForward(Graph inputGraph) {
 			continue;
 		}
 
-		//std::cout << "1: " << inputGraph.edges[cur.second].size() << std::endl;
-		//std::cout << "2: " << inputGraph.inputData[cur.second].size() << std::endl;
+		for (int i = 0; i < (int)inputGraph.inputData[cur.second].size(); ++i) {
 
-		for (int i = 0; i < (int)inputGraph.edges[cur.second].size(); ++i) {
+			if (inputGraph.inputData[cur.second][i].second + Result.distances[cur.second] < Result.distances[inputGraph.inputData[cur.second][i].first]) {
 
-			if (inputGraph.edges[cur.second][i] != 0 && inputGraph.edges[cur.second][i] + Result.distances[cur.second] < Result.distances[i]) {
+				int temp = Result.distances[inputGraph.inputData[cur.second][i].first];
 
-				int temp = Result.distances[i];
-				if (inputGraph.edges[cur.second][i] != INT_MAX) {
-					Result.distances[i] = inputGraph.edges[cur.second][i] + Result.distances[cur.second];
-					Result.previous[i] = cur.second;
-				}				
-				if (temp > Result.distances[i]) {
-					BinaryHeap.emplace_back(Heap(Result.distances[i], i));
+					Result.distances[inputGraph.inputData[cur.second][i].first] = inputGraph.inputData[cur.second][i].second + Result.distances[cur.second];
+					Result.previous[inputGraph.inputData[cur.second][i].first] = cur.second;
+						
+				if (temp > Result.distances[inputGraph.inputData[cur.second][i].first]) {
+					BinaryHeap.emplace_back(Heap(Result.distances[inputGraph.inputData[cur.second][i].first], inputGraph.inputData[cur.second][i].first));
 					std::push_heap(BinaryHeap.begin(), BinaryHeap.end(), myComparator());
 				}
 			}
